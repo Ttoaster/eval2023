@@ -77,13 +77,13 @@ WSGI_APPLICATION = 'eval2023backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'djongo',
-#         'ENFORCE_SCHEMA': False,
-#         'NAME': 'eval2023',
-#     }
-# }
+DATABASES = {
+    'default': {
+        'ENGINE': 'djongo',
+        'ENFORCE_SCHEMA': False,
+        'NAME': 'eval2023',
+    }
+}
 
 
 # DATABASES = {
