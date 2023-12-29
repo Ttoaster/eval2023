@@ -19,7 +19,7 @@ def create_wallet(request):
 
 token = "0d225355af3f4f0fac72f8db8bab8847"
 last_height = blockcypher.get_latest_block_height(coin_symbol='bcy',api_key=token)
-print("The latest BCY block height is:", last_height)
+#print("The latest BCY block height is:", last_height)
 # keypair = blockcypher.generate_new_address(coin_symbol='bcy',api_key=token)
 # print("My address is", keypair['address'])
 # print(keypair)
