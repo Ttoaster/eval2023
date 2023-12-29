@@ -1,0 +1,10 @@
+postgresql
+mariaDB
+mysql
+oracle
+SQLite
+
+Djongo
+
+3.0.5
+
