@@ -18,3 +18,8 @@ class ItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
         fields = '__all__'
+
+# class BaseSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Base
+#         fields = '__all__'
