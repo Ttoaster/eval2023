@@ -351,12 +351,11 @@ def fund_wallet(request):
             wallet_id = document.get('_id')
             print(wallet_id)
             current_balance = get_current_balance(wallet_name) or 0
-            new_balance = current_balance  # Set the new balance value
 
             # Update the balance using update_one
             result = test_collection.update_one(
                 {"_id": wallet_id},
-                {"$set": {"balance": new_balance}}
+                {"$set": {"balance": current_balance}}
             )
 
             # Check if the update was successful
@@ -369,7 +368,7 @@ def fund_wallet(request):
     return JsonResponse({'message': 'in fund wallet'})
 
 
-@api_view(['DELETE'])
+#@api_view(['DELETE'])
 def delete_user_wallet(request):
     # Logic to delete a  wallet
 
