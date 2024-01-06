@@ -111,21 +111,13 @@ def create_wallet(request):
     for document in documents:
 
         if document.get('name') == wallet_name:
-            print(document.get('name'), " ---", wallet_name)
-            # Assuming wallet_id is the ObjectId of the wallet you want to update
             wallet_id = document.get('_id')
-            print(wallet_id)
             timestamp = datetime.datetime.now()
-            print("timestamp______________________", timestamp)
-            # Update the balance using update_one
+            # Update the mongodb
             result = test_collection.update_one(
                 {"_id": wallet_id},
                 {"$set": {"keypair": keypair, "timestamp": timestamp}},
             )
-
-
-
-
             # Check if the update was successful
             if result.modified_count > 0:
                 print("New Wallet created successfully")
@@ -220,7 +212,7 @@ def send_money(request):
     # Logic to send money from one wallet to another
     print("+"*48)
     wallet_name_amount_toWallet = request.GET.get('walletName_amount_toWallet')
-    print(wallet_name_amount_toWallet)
+
     result_list = wallet_name_amount_toWallet.split("_")
 
     wallet_name = result_list[0]
@@ -231,10 +223,6 @@ def send_money(request):
     print()
 
     from_address = get_wallet_addresses(wallet_name=wallet_name, api_key=token,coin_symbol='bcy')
-    #print(' wallet to send coin from', from_address)
-    #print('alice address_____', from_address['addresses'][0])
-    fromAddress = from_address['addresses'][0]
-    print('fromAddress', fromAddress)
 
     cursor = test_collection.find()
 
@@ -247,25 +235,18 @@ def send_money(request):
             print(document.get('name'), " ---", wallet_name)
             # Assuming wallet_id is the ObjectId of the wallet you want to update
             wallet_id = document.get('_id')
-            print(wallet_id)
 
             if document.get('keypair'):
-                print("keypair", document.get('keypair'))
                 keys = document.get('keypair')
-                print(keys)
-                print("private key", keys.get('private'))
                 private_keypair = keys.get('private')
 
     to_address = get_wallet_addresses(wallet_name=to_wallet, api_key=token,coin_symbol='bcy')
 
     toAddress = to_address['addresses'][0]
-    print("toAddress", toAddress)
-
-
 
     tx_ref = blockcypher.simple_spend(
         from_privkey=private_keypair,to_address=toAddress,to_satoshis=amount_to_send,coin_symbol='bcy',api_key=token)
-    print("Txid is", tx_ref)
+
     print("*"*48)
     result = get_broadcast_transactions(limit=1)
     print("result ******************", result)
@@ -274,7 +255,7 @@ def send_money(request):
         #update sending wallet
         if document.get('name') == wallet_name:
             wallet_id = document.get('_id')
-            print(wallet_id)
+
             current_balance = get_current_balance(wallet_name) or 0
             new_balance = current_balance  # Set the new balance value
             timestamp = datetime.datetime.now()
@@ -323,9 +304,6 @@ def fund_wallet(request):
 
     ######################################################
     #sync wallet with mongodb
-
-
-
     cursor = test_collection.find()
 
     # Iterate over the cursor to retrieve all documents
@@ -365,7 +343,7 @@ def delete_user_wallet(request):
 
     print(" wallet to be deleted", wallet_name_to_delete)
 
-    walletDeleted = delete_wallet(wallet_name=wallet_name_to_delete, api_key=token, coin_symbol='bcy')
+    delete_wallet(wallet_name=wallet_name_to_delete, api_key=token, coin_symbol='bcy')
 
     cursor = test_collection.find()
 
