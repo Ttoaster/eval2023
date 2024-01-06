@@ -1,21 +1,19 @@
 import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import { Box, Button, FormControl, FormHelperText, InputLabel, MenuItem, OutlinedInput, Select,  SelectChangeEvent ,  TextField, Typography } from '@mui/material';
-//import axios from 'axios';
-//import { render } from 'react-dom';
-import { AgGridReact } from 'ag-grid-react'; // the AG Grid React Component
+import BlockCypherQRCode from './BlockCypherQRCode';
+
 import './App.css';
 
 
-import 'ag-grid-community/dist/styles/ag-grid.css'; // Core grid CSS, always needed
-import 'ag-grid-community/dist/styles/ag-theme-alpine-dark.css'; // Optional theme CSS
+
 
 import { SlRefresh } from "react-icons/sl";
 
 function App() {
 
-    const gridRef = useRef();
+    //const gridRef = useRef();
 
-    const [firstLoad, setFirsLoad] = useState(true);
+    const [firstLoad, setFirstLoad] = useState(true);
     const [walletNames, setWalletNames] = useState(null);
     const [walletDetails, setWalletDetails] = useState(null);
     const [coin, setCoin] = useState("BlockCypher Testnet (BCY)")
@@ -25,27 +23,15 @@ function App() {
     const [fundWalletUI, setFundWalletUI] = useState(false);
     const [currentWallet, setCurrentWallet] = useState(null);
     const [sendCoinUI, setSendCoinUI] = useState(false);
-
-       // Each Column Definition results in one Column.
-    const [columnDefs, setColumnDefs] = useState([
-        { field: "make" },
-        { field: "model" },
-        { field: "price"},
-        { field: "hours", editable: true },
-        { field: "email"}
-    ]);
-
-    const defaultColDef = useMemo( () => ({
-        sortable: true,
-        filter: true,
-    }), []);
-
-    const cellClickedListener = useCallback(e => {
-        console.log('cellClicked', e);
-    });
+    const [QRCodeUI, setQRCodeUI] = useState(false);
+    const [timer, setTimer] = useState(false);
+    const [publicAddress, setPublicAddress] = useState(null);
+    const [deleteWalletAction, setDeleteWalletAction] = useState(false);
+    const [transactionConfirmation, setTransactionConfirmation] = useState(false);
+    const [isExpired, setIsExpired] = useState(false);
 
 
-    const fetchData = async () => {
+    const FetchData = async () => {
 
         try {
             const response = await fetch('http://127.0.0.1:8000/base/get_data/', {
@@ -57,14 +43,52 @@ function App() {
             const data = await response.json();
             console.log('response', data);
             setDocuments(data);
+            startTimer();
+            setTimer(false);
         } catch (error) {
             console.log("ERROR", error);
         }
     }
 
+    function startTimer() {
+        // Set the time delay to 30 minutes (in milliseconds)
+        const thirtyMinutes = 30 * 60 * 1000;
+        const oneMinute = 3 * 60 * 1000;
+        console.log("Time restarted");
+
+        setTimeout(() => {
+            console.log("30 minutes have passed!");
+            setTimer(true);
+        }, thirtyMinutes);
+      }
+
+
+
     useEffect(() => {
 
-        fetchData();
+        const firstFetchData = async () => {
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/base/get_data/', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                const data = await response.json();
+
+                setDocuments(data);
+                startTimer();
+                setTimer(false);
+            } catch (error) {
+                console.log("ERROR", error);
+            }
+        }
+
+        // get latest data
+        firstFetchData();
+        // Call the function to start the timer
+        startTimer();
 
     }, []);
 
@@ -92,7 +116,7 @@ function App() {
     }
 
     const getWalletBalance = async () => {
-        console.log("in getWallets");
+        console.log("in getWallet balance");
         try {
             const response = await fetch('http://127.0.0.1:8000/base/get_balance/', {
                 method: 'GET',
@@ -109,10 +133,29 @@ function App() {
         }
     }
 
+
+
     const getWallets = async (refreshData = false) => {
         console.log("in getWallets - walletNames", walletNames);
 
+
+        const checkTimestamp = (timestamp) => {
+            const currentTimestamp = new Date();
+            const storedTimestamp = new Date(timestamp);
+            console.log(currentTimestamp, " --- ", storedTimestamp);
+            const timeDifference = (currentTimestamp - storedTimestamp) / (1000 * 60); // in minutes
+            console.log("timeDifference", timeDifference);
+            setIsExpired(timeDifference > 30);
+            if (timeDifference > 30) {
+                return "Expired"
+            } else {
+                return "Good"
+            }
+          };
+
+
         const updateData = async () => {
+            console.log("******************  fetching latest data from blockcypher")
             try {
                 const response = await fetch('http://127.0.0.1:8000/base/get_wallets/', {
                     method: 'GET',
@@ -125,7 +168,8 @@ function App() {
                 console.log('data.wallet_names', data.wallet_names);
                 setWalletNames(data.wallet_names)
                 //update local documents
-                fetchData();
+                FetchData();
+                startTimer();
                 //console.log("response: ", data.message);
                 console.log("Documents stored", documents )
             } catch (error) {
@@ -141,6 +185,14 @@ function App() {
         if (documents && !refreshData) {
             for (let x = 0; x < documents.length; x++) {
                 console.log(documents[x])
+                if (documents[x].timestamp) {
+                    console.log(documents[x].timestamp)
+                    let result = checkTimestamp(documents[x].timestamp)
+                    console.log("result of timestamp check", result)
+                    if (result === "Expired") {
+                        updateData();
+                    }
+                }
                 localWalletNames.push(documents[x].name);
             }
             console.log(localWalletNames);
@@ -151,6 +203,8 @@ function App() {
         }
 
     }
+
+
 
     const sendCoin = async (walletName, amount, toWallet) => {
         console.log("in sendCoin", walletName, amount, toWallet);
@@ -229,7 +283,7 @@ function App() {
 
 
                 <p>Enter Amount to send</p>
-                <p>Enter numbers only</p>
+                <p>Enter integers only</p>
                 <TextField
                     sx={{
                         //height: "19px"
@@ -438,10 +492,123 @@ function App() {
     }
 
 
+    const GetQRCode = () => {
+
+        if (QRCodeUI) {
+
+            return (
+                <div>
+                    <h3>QR Code</h3>
+                    <BlockCypherQRCode publicAddress={publicAddress} />
+                    <Button
+                    onClick={e => {
+                            setQRCodeUI(false)
+                            setPublicAddress(null)
+                    }}
+                    variant='outlined'
+                    sx={{
+                        color: "#161617",
+                        marginLeft: "5px",
+                        marginTop: "5px",
+                        marginBottom: "2px",
+                        height: "19px"
+                    }}>
+                    Hide
+                </Button>
+                </div>
+            )
+        }
+    }
+
+
+    // const get_transaction_result = async () => {
+    //     let data = ""
+    //     try {
+    //         const response = await fetch('http://127.0.0.1:8000/base/get_transaction', {
+    //             method: 'GET',
+    //             headers: {
+    //                 'Content-Type': 'application/json',
+    //             },
+    //         });
+    //         data = response;
+    //         console.log(data);
+    //         setTransactionConfirmation(true);
+    //     } catch (error) {
+    //         console.error('Error getting transaction', error);
+    //         setTransactionConfirmation(false);
+    //     }
+    //     return data;
+    // }
+
+    const GetTransactionConfirmation = () => {
+
+        if (transactionConfirmation) {
+            return (
+                <div>
+                    <p>
+                        You have transactions that have not been verified.
+                    </p>
+                    <p>
+                        Please click "Query Transaction" to verify if  your transaction has been confirmed.
+                    </p>
+                    <Button
+                        variant='outlined'
+                        sx={{
+                            color: "#161617",
+                            marginLeft: "5px",
+                            marginBottom: "2px",
+                            height: "19px"
+                        }}
+                        onClick={ e => {
+                            setFundWalletUI(false)
+                            setQRCodeUI(false)
+                            setSendCoinUI(false)
+                            setDeleteWalletAction(false)
+                            setTransactionConfirmation(false)
+                            getWalletDetails(currentWallet)
+                        }}>
+                        Query Transaction
+                    </Button>
+
+                </div>
+            )
+
+        }
+    }
+
+
+    const isDataCurrent = () => {
+        let isCurrent = ""
+
+        if (isExpired) {
+            console.log("data is expired", isExpired);
+            isCurrent = "Data is expired";
+        } else {
+            isCurrent = "Data is current";
+        }
+
+        return (
+            <h4>Data Age: {isCurrent} </h4>
+        )
+    }
+
+
     const WalletDetails = () => {
         if (walletDetails) {
             console.log("wallet details", walletDetails)
-            let walletName = walletDetails.wallet.name
+
+            const blockCypherPublicAddress = walletDetails.wallet.addresses[0];
+            console.log(blockCypherPublicAddress)
+            setPublicAddress(blockCypherPublicAddress)
+
+            if (walletDetails.unconfirmed_n_tx !== 0) {
+                setTransactionConfirmation(true);
+            } else {
+                setTransactionConfirmation(false);
+            }
+
+
+
             return (
                 <div>
                     <h2>Wallet Details - {walletDetails.wallet.name} <RefreshWalletDetails /></h2>
@@ -450,6 +617,7 @@ function App() {
                     <h4>Total Received: {walletDetails.total_received}</h4>
                     <h4>Total Sent: {walletDetails.total_sent}</h4>
                     <h4>Unconfirmed Balance: {walletDetails.unconfirmed_balance}</h4>
+                    <h4>Unconfirmed Transactions: {walletDetails.unconfirmed_n_tx}</h4>
 
                     <Button
                         variant='outlined'
@@ -461,6 +629,9 @@ function App() {
                         }}
                         onClick={ e => {
                             setFundWalletUI(true)
+                            setQRCodeUI(false)
+                            setSendCoinUI(false)
+                            setDeleteWalletAction(false)
                         }}>
                         Fund Wallet
                     </Button>
@@ -476,6 +647,9 @@ function App() {
                         }}
                         onClick={e => {
                             setSendCoinUI(true)
+                            setQRCodeUI(false)
+                            setFundWalletUI(false)
+                            setDeleteWalletAction(false)
                         }}>
                         Send Coin
                     </Button>
@@ -488,8 +662,30 @@ function App() {
                             marginBottom: "2px",
                             height: "19px"
                         }}
+                        onClick={e => {
+                            setQRCodeUI(true)
+                            setSendCoinUI(false)
+                            setFundWalletUI(false)
+                            setDeleteWalletAction(false)
+                        }}>
+                        QR Code
+                    </Button>
+
+                    <Button
+                        variant='outlined'
+                        sx={{
+                            color: "#161617",
+                            marginLeft: "5px",
+                            marginBottom: "2px",
+                            height: "19px"
+                        }}
                         onClick={ e => {
-                            deleteWallet(walletName)
+                        //    deleteWallet(walletName)
+                            setQRCodeUI(false)
+                            setSendCoinUI(false)
+                            setFundWalletUI(false)
+                            setDeleteWalletAction(true)
+
                         }}>
                         Delete Wallet
                     </Button>
@@ -500,6 +696,8 @@ function App() {
                             setCurrentWallet(null)
                             setSendCoinUI(false)
                             setFundWalletUI(false)
+                            setQRCodeUI(false)
+                            setDeleteWalletAction(false)
                             Wallets()
                         }}
                         variant='outlined'
@@ -511,6 +709,24 @@ function App() {
                         }}>
                         Back to Wallets
                     </Button>
+                    {/* <div>
+
+                    <Button
+                        onClick={e => {
+                            get_transaction_result()
+                        }}
+                        variant='outlined'
+                        sx={{
+                            color: "#161617",
+                            marginLeft: "5px",
+                            marginBottom: "2px",
+                            height: "19px"
+                        }}>
+                        Test Confirmation
+                    </Button>
+                        </div> */}
+
+
                 </div>
             )
         }
@@ -690,10 +906,13 @@ function App() {
 
                     <div>
                     <Button
-                        variant="contained"
-                        sx={{
-                        marginBottom: "5px",
-                        }}
+                            variant="outlined"
+                            sx={{
+                            color: "#161617",
+                            marginLeft: "5px",
+                            marginBottom: "2px",
+                            height: "39px",
+                            }}
                         onClick={(e) => {
 
                             setCreateWallet(true);
@@ -717,13 +936,16 @@ function App() {
                         <Typography variant="body1" color="initial">Welcome back!</Typography>
                     <div>
                         <Button
-                            variant="contained"
+                            variant="outlined"
                             sx={{
-                                marginBottom: "5px"
+                            color: "#161617",
+                            marginLeft: "5px",
+                            marginBottom: "2px",
+                            height: "39px",
                             }}
                             onClick={ e => {
                                 getWallets()
-                                setFirsLoad(false)
+                                setFirstLoad(false)
                             }}>
                             View Wallets
                         </Button>
@@ -744,6 +966,88 @@ function App() {
     }
 
 
+    const TimeWarning = () => {
+
+
+        if (timer) {
+            return (
+                <div>
+                    <h3
+                        style={{
+                            color: "#ec942c"
+                        }}
+                    >Warning!</h3>
+                    <p>Data has not been refreshed for 30 minutes.</p>
+                    <p>Please click to refresh data.</p>
+                    <Button
+                            variant="outlined"
+                            sx={{
+                            color: "#161617",
+                            marginLeft: "5px",
+                            marginBottom: "2px",
+                            height: "19px",
+                            }}
+                            onClick={ e => {
+                                FetchData()
+                                setTimer(false)
+
+                            }}>
+                            Refresh Data
+                        </Button>
+                </div>
+            )
+        }
+    }
+
+
+    const DeleteWallet = () => {
+        if (deleteWalletAction) {
+            return (
+                <div>
+                    <h4>Are you sure you want to delete { currentWallet }?</h4>
+                    <h5>This action cannot be undone!</h5>
+                        <div>
+                        <Button
+                            variant="outlined"
+                            sx={{
+                            color: "#161617",
+                            marginLeft: "5px",
+                            marginBottom: "2px",
+                            height: "39px",
+                            }}
+                            onClick={ e => {
+                                getWallets()
+                                setFirstLoad(false)
+                                deleteWallet(currentWallet)
+                                setDeleteWalletAction(false)
+                                Wallets()
+                            }}>
+                            Delete
+                        </Button>
+                    </div>
+                    <div>
+                        <Button
+                            variant="outlined"
+                            sx={{
+                            color: "#161617",
+                            marginLeft: "5px",
+                            marginBottom: "2px",
+                            height: "19px",
+                            }}
+                            onClick={ e => {
+                                getWallets()
+                                setDeleteWalletAction(false)
+                                Wallets()
+                            }}>
+                            Cancel
+                        </Button>
+                    </div>
+                </div>
+            )
+
+        }
+    }
+
 
 
 
@@ -753,11 +1057,15 @@ function App() {
         <div className="App">
             <Title />
             <Menu />
+            <TimeWarning />
             <Wallets />
             <WalletDetails />
             <CreateWallet />
             <FundWallet />
             <SendCoin />
+            <GetQRCode />
+            <DeleteWallet />
+            <GetTransactionConfirmation />
         </div>
 
  );
