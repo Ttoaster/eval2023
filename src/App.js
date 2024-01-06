@@ -545,6 +545,40 @@ function App() {
     }
 
 
+    const RefreshWalletDetails = () => {
+
+        return (
+            <Button
+                onClick={e => {
+                    getWalletDetails(currentWallet)
+                }}
+                className="refreshButton"
+                variant='outlined'
+            >
+            <SlRefresh />
+            </Button>
+        )
+    }
+
+
+    const RefreshWallets = () => {
+        let refreshData = true
+        return (
+            <Button
+                onClick={e => {
+                    setWalletNames(null)
+                    getWallets(refreshData)
+
+                }}
+                className="refreshButton"
+                variant='outlined'
+            >
+            <SlRefresh />
+            </Button>
+        )
+    }
+
+
     const WalletDetails = () => {
         if (walletDetails) {
 
@@ -560,13 +594,13 @@ function App() {
             return (
                 <div>
                     <Box className="cardGrid">
-                    <h2>Wallet Details - {walletDetails.wallet.name} <RefreshWalletDetails /></h2>
-                    <h4>Coin Type: {coin}</h4>
-                    <h4>Balance: {walletDetails.balance}</h4>
-                    <h4>Total Received: {walletDetails.total_received}</h4>
-                    <h4>Total Sent: {walletDetails.total_sent}</h4>
-                    <h4>Unconfirmed Balance: {walletDetails.unconfirmed_balance}</h4>
-                    <h4>Unconfirmed Transactions: {walletDetails.unconfirmed_n_tx}</h4>
+                        <h2>Wallet Details - {walletDetails.wallet.name} <RefreshWalletDetails /></h2>
+                        <h4>Coin Type: {coin}</h4>
+                        <h4>Balance: {walletDetails.balance}</h4>
+                        <h4>Total Received: {walletDetails.total_received}</h4>
+                        <h4>Total Sent: {walletDetails.total_sent}</h4>
+                        <h4>Unconfirmed Balance: {walletDetails.unconfirmed_balance}</h4>
+                        <h4>Unconfirmed Transactions: {walletDetails.unconfirmed_n_tx}</h4>
                     </Box>
                     <Button
                         variant='outlined'
@@ -633,12 +667,10 @@ function App() {
                             height: "19px"
                         }}
                         onClick={ e => {
-                        //    deleteWallet(walletName)
                             setQRCodeUI(false)
                             setSendCoinUI(false)
                             setFundWalletUI(false)
                             setDeleteWalletAction(true)
-
                         }}>
                         Delete Wallet
                     </Button>
@@ -748,38 +780,7 @@ function App() {
     }
 
 
-    const RefreshWalletDetails = () => {
 
-        return (
-            <Button
-                onClick={e => {
-                    getWalletDetails(currentWallet)
-                }}
-                className="refreshButton"
-                variant='outlined'
-            >
-                 <SlRefresh />
-            </Button>
-        )
-    }
-
-
-    const RefreshWallets = () => {
-        let refreshData = true
-        return (
-            <Button
-                onClick={e => {
-                    setWalletNames(null)
-                    getWallets(refreshData)
-
-                }}
-                className="refreshButton"
-                variant='outlined'
-            >
-                 <SlRefresh />
-            </Button>
-        )
-    }
 
 
 
