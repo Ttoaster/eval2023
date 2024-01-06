@@ -47,10 +47,10 @@ function App() {
         }
     }
 
+
     function startTimer() {
         // Set the time delay to 30 minutes (in milliseconds)
         const thirtyMinutes = 30 * 60 * 1000;
-        const threeMinutes = 3 * 60 * 1000;
 
         setTimeout(() => {
             console.log("30 minutes have passed!");
@@ -496,7 +496,7 @@ function App() {
         if (transactionConfirmation) {
             return (
 
-                    <Box className="box">
+                <Box className="box">
                     <p>
                         You have transactions that have not been verified.
                     </p>
@@ -521,7 +521,7 @@ function App() {
                         }}>
                         Query Transaction
                     </Button>
-                    </Box>
+                </Box>
 
             )
 
@@ -599,7 +599,7 @@ function App() {
                         <h4>Balance: {walletDetails.balance}</h4>
                         <h4>Total Received: {walletDetails.total_received}</h4>
                         <h4>Total Sent: {walletDetails.total_sent}</h4>
-                        <h4>Unconfirmed Balance: {walletDetails.unconfirmed_balance}</h4>
+                        <h4>Unconfirmed Amount: {walletDetails.unconfirmed_balance}</h4>
                         <h4>Unconfirmed Transactions: {walletDetails.unconfirmed_n_tx}</h4>
                     </Box>
                     <Button
@@ -865,7 +865,7 @@ function App() {
             return (
                 <div>
                     <Box>
-                        <Typography variant="body1" color="initial">Welcome back!</Typography>
+                        <Typography variant="body1" color="initial">Welcome!</Typography>
                     <div>
                         <Button
                             variant="outlined"
