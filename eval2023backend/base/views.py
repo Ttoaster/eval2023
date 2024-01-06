@@ -19,11 +19,13 @@ from blockcypher import get_wallet_balance
 from blockcypher import simple_spend
 from blockcypher import delete_wallet
 from blockcypher import get_broadcast_transactions
+from blockcypher import get_transaction_details
 
+import datetime
 
-from ecdsa import SigningKey, SECP256k1
-import hashlib
-import base58
+# from ecdsa import SigningKey, SECP256k1
+# import hashlib
+# import base58
 
 
 # BLOCKCYPHER_API_KEY = 'your_blockcypher_api_key'
@@ -50,36 +52,36 @@ def get_data(request):
     return Response(returnDocuments)
 
 
-def index(request):
+# def index(request):
 
-    last_height = blockcypher.get_latest_block_height(coin_symbol='bcy',api_key=token)
-    print("The latest BCY block height is:", last_height)
-    message = "  <h1>   App is running...        </h1>"
-    # return HttpResponse(
+#     last_height = blockcypher.get_latest_block_height(coin_symbol='bcy',api_key=token)
+#     print("The latest BCY block height is:", last_height)
+#     message = "  <h1>   App is running...        </h1>"
+#     # return HttpResponse(
 
-    #     {last_height, message },
+#     #     {last_height, message },
 
-    #     )
-    return last_height
-
-
-@api_view(['POST'])
-def add_person(request):
-
-    last_height = blockcypher.get_latest_block_height(coin_symbol='bcy',api_key=token)
-    records = {
-        "block_height": last_height,
-
-    }
-    test_collection.insert_one(records)
+#     #     )
+#     return last_height
 
 
-    # return HttpResponse("New person added")
-    return records
+# @api_view(['POST'])
+# def add_person(request):
 
-def get_all_person(request):
-    persons = test_collection.find()
-    return HttpResponse(persons)
+#     last_height = blockcypher.get_latest_block_height(coin_symbol='bcy',api_key=token)
+#     records = {
+#         "block_height": last_height,
+
+#     }
+#     test_collection.insert_one(records)
+
+
+#     # return HttpResponse("New person added")
+#     return records
+
+# def get_all_person(request):
+#     persons = test_collection.find()
+#     return HttpResponse(persons)
 
 
 
@@ -113,13 +115,16 @@ def create_wallet(request):
             # Assuming wallet_id is the ObjectId of the wallet you want to update
             wallet_id = document.get('_id')
             print(wallet_id)
-
-
+            timestamp = datetime.datetime.now()
+            print("timestamp______________________", timestamp)
             # Update the balance using update_one
             result = test_collection.update_one(
                 {"_id": wallet_id},
-                {"$set": {"keypair": keypair}}
+                {"$set": {"keypair": keypair, "timestamp": timestamp}},
             )
+
+
+
 
             # Check if the update was successful
             if result.modified_count > 0:
@@ -132,33 +137,23 @@ def create_wallet(request):
         key: value for key, value in wallet.items() if key != '_id'
     }
 
-    #return JsonResponse(wallet)
+
     return Response(serialized_wallet)
 
 
 
 @api_view(['GET'])
 def get_balance(request):
-    # Logic to retrieve wallet balance
-    #token = "0d225355af3f4f0fac72f8db8bab8847"
-    #print(list_wallet_names(token))
-    #wallets = list_wallet_names(token,coin_symbol='bcy')
-    #print(wallets)
-    #get_address = get_wallet_addresses(wallet_name='alice', api_key=token,coin_symbol='bcy')
-    #print('get address_____', get_address)
 
     wallet_balance = get_wallet_balance(wallet_name='alice', api_key=token, coin_symbol='bcy')
     print("wallet balance",wallet_balance)
     print("bob balance", get_wallet_balance(wallet_name='bob', api_key=token, coin_symbol='bcy'))
 
 
-
-
-    # return Response({'balance': 100.0})
     return JsonResponse(wallet_balance)
 
 
-# @api_view(['GET'])
+@api_view(['GET'])
 def get_wallet_details(request):
     print("="*66)
     wallet_name = request.GET.get('walletName')
@@ -176,11 +171,11 @@ def get_wallet_details(request):
     print("document", document)
     wallet_id = document[0].get('_id')
     print("id", wallet_id)
-
+    timestamp = datetime.datetime.now()
     if document:
         result = test_collection.update_one(
             {'_id': wallet_id},
-            {'$set': {'balance': wallet_balance}}
+            {'$set': {'balance': wallet_balance, "timestamp": timestamp}}
         )
         if result.modified_count > 0:
             print("Balance updated successfully")
@@ -190,43 +185,37 @@ def get_wallet_details(request):
     return JsonResponse(wallet_details)
 
 
-#@api_view(['GET'])
+@api_view(['GET'])
 def get_wallets(request):
     # Logic to retrieve wallet names
 
     wallets = list_wallet_names(token,coin_symbol='bcy')
     print(wallets)
+
+    #update mongodb with current time
+    cursor = test_collection.find()
+    # Iterate over the cursor to retrieve all documents
+    documents = list(cursor)
+
+    timestamp = datetime.datetime.now()
+    for document in documents:
+        wallet_id = document.get('_id')
+        result = test_collection.update_one(
+            {"_id": wallet_id},
+            {"$set": {"timestamp": timestamp}}
+        )
+        # Check if the update was successful
+        if result.modified_count > 0:
+            print("Timestamp updated")
+        else:
+            print("No documents matched the query or the timestamp was not updated")
+
+
     return JsonResponse(wallets)
 
 
-# def get_private_key_from_address(address, private_key_hex):
-#     # Assuming private_key_hex is a hexadecimal representation of the private key
-#     private_key = SigningKey.from_string(bytes.fromhex(private_key_hex), curve=SECP256k1)
 
-#     # Verify that the private key corresponds to the provided address
-#     public_key = private_key.get_verifying_key().to_string()
-#     derived_address = hashlib.new('ripemd160', hashlib.sha256(public_key).digest()).digest()
-#     derived_address = base58.b58encode_check(b'\x00' + derived_address).decode('utf-8')
-
-#     if derived_address == address:
-#         return private_key
-#     else:
-#         raise ValueError("Private key does not correspond to the provided address")
-
-
-# # Replace 'private_key_hex' with the actual private key in hexadecimal format
-# def generate_private_key_hex():
-#     # Generate a private key
-#     private_key = SigningKey.generate(curve=SECP256k1)
-
-#     # Convert the private key to hexadecimal format
-#     private_key_hex = private_key.to_string().hex()
-
-#     return private_key_hex
-
-
-
-#@api_view(['POST'])
+@api_view(['POST'])
 def send_money(request):
     # Logic to send money from one wallet to another
     print("+"*48)
@@ -288,10 +277,10 @@ def send_money(request):
             print(wallet_id)
             current_balance = get_current_balance(wallet_name) or 0
             new_balance = current_balance  # Set the new balance value
-
+            timestamp = datetime.datetime.now()
             result = test_collection.update_one(
                 {"_id": wallet_id},
-                {"$set": {"balance": new_balance}}
+                {"$set": {"balance": new_balance, "timestamp": timestamp}}
             )
 
             # Check if the update was successful
@@ -314,7 +303,7 @@ def get_current_balance(wallet_name):
     return wallet_balance
 
 
-#@api_view(['POST'])
+@api_view(['POST'])
 def fund_wallet(request):
 
     print("-"*48)
@@ -351,11 +340,11 @@ def fund_wallet(request):
             wallet_id = document.get('_id')
             print(wallet_id)
             current_balance = get_current_balance(wallet_name) or 0
-
+            timestamp = datetime.datetime.now()
             # Update the balance using update_one
             result = test_collection.update_one(
                 {"_id": wallet_id},
-                {"$set": {"balance": current_balance}}
+                {"$set": {"balance": current_balance, "timestamp": timestamp}}
             )
 
             # Check if the update was successful
@@ -368,7 +357,7 @@ def fund_wallet(request):
     return JsonResponse({'message': 'in fund wallet'})
 
 
-#@api_view(['DELETE'])
+@api_view(['DELETE'])
 def delete_user_wallet(request):
     # Logic to delete a  wallet
 
@@ -400,3 +389,16 @@ def delete_user_wallet(request):
                 return JsonResponse({'message': "Delete successful"})
             else:
                 return JsonResponse({'message': "Delete failed"})
+
+
+
+def get_transaction(request):
+    test = 'f854aebae95150b379cc1187d848d58225f3c4157fe992bcd166f58bd5063449'
+    result = get_transaction_details(test)
+    print("@"* 55)
+    print("result", result)
+    print("-----------------------", result.get('confirmed'))
+    print("-----------------------", result.get('confirmations'))
+    print("-----------------------", result.get('confidence'))
+
+    return JsonResponse(result)

@@ -1,14 +1,14 @@
 from django.urls import path
-from .views import create_wallet, get_balance, send_money, fund_wallet, get_wallets, get_wallet_details, delete_user_wallet, get_data
+from .views import create_wallet, get_balance, send_money, fund_wallet, get_wallets, get_wallet_details, delete_user_wallet, get_data, get_transaction
 from . import views
 
 
 
 
 urlpatterns = [
-    path('', views.index),
-    path('add/', views.add_person),
-    path('show/', views.get_all_person),
+    # path('', views.index),
+    # path('add/', views.add_person),
+    # path('show/', views.get_all_person),
     path('create_wallet/', create_wallet, name='create_wallet'),
     path('create_wallet/<str:newWalletName>', create_wallet, name='create_wallet'),
     path('delete_user_wallet/', delete_user_wallet, name='delete_user_wallet'),
@@ -22,4 +22,5 @@ urlpatterns = [
     path('fund_wallet/', fund_wallet, name='fund_wallet'),
     path('fund_wallet/<str:walletName_amount>', fund_wallet, name='fund_wallet'),
     path('get_data/', get_data, name='get_data'),
+    path('get_transaction/', get_transaction, name='get_transaction')
 ]
