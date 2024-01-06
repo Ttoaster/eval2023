@@ -41,10 +41,10 @@ function App() {
                 }
             });
             const data = await response.json();
-            console.log('response', data);
             setDocuments(data);
             startTimer();
             setTimer(false);
+            setIsExpired(false);
         } catch (error) {
             console.log("ERROR", error);
         }
@@ -54,7 +54,6 @@ function App() {
         // Set the time delay to 30 minutes (in milliseconds)
         const thirtyMinutes = 30 * 60 * 1000;
         const oneMinute = 3 * 60 * 1000;
-        console.log("Time restarted");
 
         setTimeout(() => {
             console.log("30 minutes have passed!");
@@ -95,7 +94,6 @@ function App() {
 
 
     const createNewWallet = async (newWallet) => {
-        console.log("Test transaction clicked newWalletName", newWalletName);
         console.log('newWallet tempName', newWallet);
         try {
             const response = await fetch('http://127.0.0.1:8000/base/create_wallet/?newWalletName=' + newWallet, {
@@ -105,14 +103,11 @@ function App() {
                 }
             });
             const data = await response.json();
-
-            console.log("response: ", data.message);
-            console.log("block height", data.records);
             setNewWalletName(null);
+            getWallets(true);//refresh wallet list by passing true so function fetches data from blockCypher then updates mongodb
         } catch (error) {
             console.error('Error creating wallet', error);
         }
-
     }
 
     const getWalletBalance = async () => {
@@ -125,9 +120,6 @@ function App() {
                 }
             });
             const data = await response.json();
-            console.log('data', data);
-            //console.log("response: ", data.message);
-            //console.log("block height", data.records )
         } catch (error) {
             console.error('Error getting wallets', error);
         }
@@ -136,26 +128,21 @@ function App() {
 
 
     const getWallets = async (refreshData = false) => {
-        console.log("in getWallets - walletNames", walletNames);
-
 
         const checkTimestamp = (timestamp) => {
             const currentTimestamp = new Date();
             const storedTimestamp = new Date(timestamp);
-            console.log(currentTimestamp, " --- ", storedTimestamp);
             const timeDifference = (currentTimestamp - storedTimestamp) / (1000 * 60); // in minutes
-            console.log("timeDifference", timeDifference);
             setIsExpired(timeDifference > 30);
             if (timeDifference > 30) {
                 return "Expired"
             } else {
                 return "Good"
             }
-          };
+        };
 
 
         const updateData = async () => {
-            console.log("******************  fetching latest data from blockcypher")
             try {
                 const response = await fetch('http://127.0.0.1:8000/base/get_wallets/', {
                     method: 'GET',
@@ -164,54 +151,44 @@ function App() {
                     }
                 });
                 const data = await response.json();
-                console.log("data", data)
-                console.log('data.wallet_names', data.wallet_names);
                 setWalletNames(data.wallet_names)
                 //update local documents
                 FetchData();
                 startTimer();
-                //console.log("response: ", data.message);
-                console.log("Documents stored", documents )
             } catch (error) {
                 console.error('Error getting wallets', error);
             }
         }
 
+
         if (refreshData) {
-            console.log("refreshData", refreshData);
+            // get latest from blockCypher and update mongodb
             updateData();
         }
         let localWalletNames = [];
         if (documents && !refreshData) {
             for (let x = 0; x < documents.length; x++) {
-                console.log(documents[x])
                 if (documents[x].timestamp) {
-                    console.log(documents[x].timestamp)
                     let result = checkTimestamp(documents[x].timestamp)
-                    console.log("result of timestamp check", result)
                     if (result === "Expired") {
                         updateData();
                     }
                 }
                 localWalletNames.push(documents[x].name);
             }
-            console.log(localWalletNames);
             setWalletNames(localWalletNames);
         }
         if (!localWalletNames) {
             updateData();
         }
-
     }
 
 
 
     const sendCoin = async (walletName, amount, toWallet) => {
-        console.log("in sendCoin", walletName, amount, toWallet);
 
         let amountToFund = amount;
         let walletName_amount_toWallet = walletName + '_' + amountToFund + '_' + toWallet;
-        console.log(walletName_amount_toWallet);
 
         try {
             const response = await fetch('http://127.0.0.1:8000/base/send_money/?walletName_amount_toWallet='+ walletName_amount_toWallet, {
@@ -221,7 +198,7 @@ function App() {
                 }
             });
             const data = await response.json();
-            console.log('data', data);
+            getWallets(true);//refresh wallet list by passing true so function fetches data from blockCypher then updates mongodb
         } catch (error) {
             console.error('Error getting wallets', error);
         }
@@ -236,7 +213,6 @@ function App() {
             tempAmount = e.target.value;
         }
         const handleChange = (e) => {
-            console.log(e.target.value);
             toWallet = e.target.value;
         }
         let walletList = ["Select"];
@@ -248,7 +224,6 @@ function App() {
             }
         }
         getWalletList();
-        console.log(walletList);
         return (
             <div>
                 <p>Choose destination wallet</p>
@@ -356,7 +331,6 @@ function App() {
     const fundWallet = async (walletName, amount) => {
         console.log("in fundWallet");
 
-
         let amountToFund = amount;
         let walletName_amount = walletName + '_' + amountToFund;
         console.log(walletName_amount);
@@ -369,7 +343,6 @@ function App() {
                 }
             });
             const data = await response.json();
-            console.log('data', data);
         } catch (error) {
             console.error('Error funding wallet', error);
         }
@@ -386,9 +359,7 @@ function App() {
                 },
             });
             const data = await response.json();
-            console.log('data', data);
             setWalletDetails(data);
-            //setCurrentWallet(walletName);
         } catch (error) {
             console.error('Error funding wallet', error);
         }
@@ -521,30 +492,13 @@ function App() {
     }
 
 
-    // const get_transaction_result = async () => {
-    //     let data = ""
-    //     try {
-    //         const response = await fetch('http://127.0.0.1:8000/base/get_transaction', {
-    //             method: 'GET',
-    //             headers: {
-    //                 'Content-Type': 'application/json',
-    //             },
-    //         });
-    //         data = response;
-    //         console.log(data);
-    //         setTransactionConfirmation(true);
-    //     } catch (error) {
-    //         console.error('Error getting transaction', error);
-    //         setTransactionConfirmation(false);
-    //     }
-    //     return data;
-    // }
 
     const GetTransactionConfirmation = () => {
 
         if (transactionConfirmation) {
             return (
-                <div>
+
+                    <Box className="box">
                     <p>
                         You have transactions that have not been verified.
                     </p>
@@ -569,8 +523,8 @@ function App() {
                         }}>
                         Query Transaction
                     </Button>
+                    </Box>
 
-                </div>
             )
 
         }
@@ -595,10 +549,8 @@ function App() {
 
     const WalletDetails = () => {
         if (walletDetails) {
-            console.log("wallet details", walletDetails)
 
             const blockCypherPublicAddress = walletDetails.wallet.addresses[0];
-            console.log(blockCypherPublicAddress)
             setPublicAddress(blockCypherPublicAddress)
 
             if (walletDetails.unconfirmed_n_tx !== 0) {
@@ -607,10 +559,9 @@ function App() {
                 setTransactionConfirmation(false);
             }
 
-
-
             return (
                 <div>
+                    <Box className="cardGrid">
                     <h2>Wallet Details - {walletDetails.wallet.name} <RefreshWalletDetails /></h2>
                     <h4>Coin Type: {coin}</h4>
                     <h4>Balance: {walletDetails.balance}</h4>
@@ -618,11 +569,12 @@ function App() {
                     <h4>Total Sent: {walletDetails.total_sent}</h4>
                     <h4>Unconfirmed Balance: {walletDetails.unconfirmed_balance}</h4>
                     <h4>Unconfirmed Transactions: {walletDetails.unconfirmed_n_tx}</h4>
-
+                    </Box>
                     <Button
                         variant='outlined'
                         sx={{
                             color: "#161617",
+                            marginTop: "15px",
                             marginLeft: "5px",
                             marginBottom: "2px",
                             height: "19px"
@@ -641,6 +593,7 @@ function App() {
                         variant='outlined'
                         sx={{
                             color: "#161617",
+                            marginTop: "15px",
                             marginLeft: "5px",
                             marginBottom: "2px",
                             height: "19px"
@@ -658,6 +611,7 @@ function App() {
                         variant='outlined'
                         sx={{
                             color: "#161617",
+                            marginTop: "15px",
                             marginLeft: "5px",
                             marginBottom: "2px",
                             height: "19px"
@@ -675,6 +629,7 @@ function App() {
                         variant='outlined'
                         sx={{
                             color: "#161617",
+                            marginTop: "15px",
                             marginLeft: "5px",
                             marginBottom: "2px",
                             height: "19px"
@@ -703,29 +658,13 @@ function App() {
                         variant='outlined'
                         sx={{
                             color: "#161617",
+                            marginTop: "15px",
                             marginLeft: "5px",
                             marginBottom: "2px",
                             height: "19px"
                         }}>
                         Back to Wallets
                     </Button>
-                    {/* <div>
-
-                    <Button
-                        onClick={e => {
-                            get_transaction_result()
-                        }}
-                        variant='outlined'
-                        sx={{
-                            color: "#161617",
-                            marginLeft: "5px",
-                            marginBottom: "2px",
-                            height: "19px"
-                        }}>
-                        Test Confirmation
-                    </Button>
-                        </div> */}
-
 
                 </div>
             )
@@ -781,13 +720,7 @@ function App() {
 
     const CreateWallet = () => {
 
-        // const handleInputChange = (e) => {
-        //     //setNewWalletName(e.target.value);
-        //     console.log(e.target.value)
-        // };
-
         if (createWallet) {
-
             return (
                 <div>
                     <h2>
@@ -814,7 +747,6 @@ function App() {
                 </div>
             )
         }
-
     }
 
 
@@ -827,6 +759,7 @@ function App() {
                 }}
                 variant='outlined'
                 sx={{
+                    background: "linear-gradient(90deg, #c6c9d2, #b8bcc7)",
                     color: "#161617",
                     marginLeft: "5px",
                     marginTop: "5px",
@@ -869,7 +802,7 @@ function App() {
         if (walletNames && !walletDetails && !createWallet) {
             let walletList = walletNames.sort();
             return (
-                <div>
+                <Box>
                     <h2
                     style={{
                         color: "black",
@@ -878,10 +811,16 @@ function App() {
                     Current Wallets <RefreshWallets />
                     </h2>
                     {walletList.map((wallet, index) => (
+                        <Box className="cardGrid"
+                            sx={{
+                                width: "260px",
+                            }}
+                        >
                     <div wallet={wallet} key={index}>
                         <p
                         style={{
                             color: "black",
+
                         }}
                         >
                         Wallet: {wallet}
@@ -892,26 +831,29 @@ function App() {
                             }}
                             variant="outlined"
                             sx={{
-                            color: "#161617",
-                            marginLeft: "5px",
-                            marginBottom: "2px",
-                            height: "19px",
+                                color: "#161617",
+                                marginLeft: "15px",
+                                marginBottom: "2px",
+                                height: "19px",
+                                background: "linear-gradient(90deg, #c6c9d2, #b8bcc7)",
                             }}
                         >
                             Details
                         </Button>
                         </p>
-                    </div>
-                    ))}
+                            </div>
+                    </Box>
 
+                    ))}
                     <div>
                     <Button
                             variant="outlined"
                             sx={{
-                            color: "#161617",
-                            marginLeft: "5px",
-                            marginBottom: "2px",
-                            height: "39px",
+                                color: "#161617",
+                                marginTop: "15px",
+                                marginLeft: "5px",
+                                marginBottom: "2px",
+                                height: "39px",
                             }}
                         onClick={(e) => {
 
@@ -921,7 +863,7 @@ function App() {
                         Create New Wallet
                     </Button>
                     </div>
-                </div>
+                </Box>
             );
         }
     };
@@ -959,9 +901,9 @@ function App() {
     const Title = () => {
 
         return (
-            <div>
+            <Box className="App-title">
                 <h1>Eval2023 App</h1>
-            </div>
+            </Box>
         )
     }
 
@@ -971,10 +913,10 @@ function App() {
 
         if (timer) {
             return (
-                <div>
+                <Box className="box">
                     <h3
                         style={{
-                            color: "#ec942c"
+                            color: "#bb6e11"
                         }}
                     >Warning!</h3>
                     <p>Data has not been refreshed for 30 minutes.</p>
@@ -994,7 +936,7 @@ function App() {
                             }}>
                             Refresh Data
                         </Button>
-                </div>
+                </Box>
             )
         }
     }
