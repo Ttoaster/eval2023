@@ -5,9 +5,7 @@
 
 
 .App {
-
     text-align: center;
-    /* background-color: var(--background-color); */
     background: linear-gradient(90deg, #dfe1e6, #b0b3b8);
     min-height: 100vh;
     display: flex;
@@ -41,9 +39,7 @@
     padding-right: 1px;
     border-radius: 3%;
     background-color:var(--background-color);
-      align-content: inherit;
-      align-items: center;
-      align-self: center;
+
   }
 
   .box {
@@ -57,4 +53,14 @@
     align-items: center;
     align-self: center;
   }
+
+.refreshButton {
+    background: linear-gradient(40deg, #c6c9d2, #b8bcc7);
+    color: #161617;
+    margin-left: 5px;
+    margin-top: 5px;
+    margin-bottom: 4px;
+    height: 29px;
+    width: auto;
+}
 

@@ -1,17 +1,14 @@
-import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
-import { Box, Button, FormControl, FormHelperText, InputLabel, MenuItem, OutlinedInput, Select,  SelectChangeEvent ,  TextField, Typography } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, Button, TextField, Typography } from '@mui/material';
 import BlockCypherQRCode from './BlockCypherQRCode';
 
 import './App.css';
 
-
-
-
 import { SlRefresh } from "react-icons/sl";
+
 
 function App() {
 
-    //const gridRef = useRef();
 
     const [firstLoad, setFirstLoad] = useState(true);
     const [walletNames, setWalletNames] = useState(null);
@@ -53,7 +50,7 @@ function App() {
     function startTimer() {
         // Set the time delay to 30 minutes (in milliseconds)
         const thirtyMinutes = 30 * 60 * 1000;
-        const oneMinute = 3 * 60 * 1000;
+        const threeMinutes = 3 * 60 * 1000;
 
         setTimeout(() => {
             console.log("30 minutes have passed!");
@@ -151,7 +148,8 @@ function App() {
                     }
                 });
                 const data = await response.json();
-                setWalletNames(data.wallet_names)
+                console.log("wallet data", data);
+                setWalletNames(data.wallet_names);
                 //update local documents
                 FetchData();
                 startTimer();
@@ -215,22 +213,22 @@ function App() {
         const handleChange = (e) => {
             toWallet = e.target.value;
         }
-        let walletList = ["Select"];
+        let walletList = [];
         const getWalletList = () => {
             for (let x = 0; x < walletNames.length; x++) {
                 if (walletNames[x] !== currentWallet) {
                     walletList.push(walletNames[x]);
                 }
             }
+
+
         }
         getWalletList();
         return (
             <div>
                 <p>Choose destination wallet</p>
                 <div sx={{ m: 1, minWidth: 220 }}>
-                    {/* <InputLabel id="demo-simple-select-helper-label">Wallet</InputLabel> */}
                     <div
-                    //labelId="demo-simple-select-helper-label"
                     id="demo-simple-select-helper"
                     value={walletList}
                     label="Wallet"
@@ -757,16 +755,9 @@ function App() {
                 onClick={e => {
                     getWalletDetails(currentWallet)
                 }}
+                className="refreshButton"
                 variant='outlined'
-                sx={{
-                    background: "linear-gradient(90deg, #c6c9d2, #b8bcc7)",
-                    color: "#161617",
-                    marginLeft: "5px",
-                    marginTop: "5px",
-                    marginBottom: "4px",
-                    height: "29px",
-                    width: "auto"
-                }}>
+            >
                  <SlRefresh />
             </Button>
         )
@@ -782,15 +773,9 @@ function App() {
                     getWallets(refreshData)
 
                 }}
+                className="refreshButton"
                 variant='outlined'
-                sx={{
-                    color: "#161617",
-                    marginLeft: "5px",
-                    marginTop: "5px",
-                    marginBottom: "4px",
-                    height: "29px",
-                    width: "auto"
-                }}>
+            >
                  <SlRefresh />
             </Button>
         )
@@ -801,6 +786,8 @@ function App() {
     const Wallets = () => {
         if (walletNames && !walletDetails && !createWallet) {
             let walletList = walletNames.sort();
+
+
             return (
                 <Box>
                     <h2
@@ -811,16 +798,17 @@ function App() {
                     Current Wallets <RefreshWallets />
                     </h2>
                     {walletList.map((wallet, index) => (
-                        <Box className="cardGrid"
+                        <Box
+                            key={index}
+                            className="cardGrid"
                             sx={{
                                 width: "260px",
                             }}
                         >
-                    <div wallet={wallet} key={index}>
+                        <div wallet={wallet} >
                         <p
                         style={{
                             color: "black",
-
                         }}
                         >
                         Wallet: {wallet}
@@ -845,6 +833,7 @@ function App() {
                     </Box>
 
                     ))}
+
                     <div>
                     <Button
                             variant="outlined"
