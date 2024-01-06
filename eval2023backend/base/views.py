@@ -5,8 +5,6 @@ from rest_framework import viewsets
 from django.http import JsonResponse
 from django.shortcuts import render
 from .models import test_collection
-#from base.models import Base
-#from .serializers import BaseSerializer
 from django.http import HttpResponse
 
 import requests
@@ -23,12 +21,7 @@ from blockcypher import get_transaction_details
 
 import datetime
 
-# from ecdsa import SigningKey, SECP256k1
-# import hashlib
-# import base58
 
-
-# BLOCKCYPHER_API_KEY = 'your_blockcypher_api_key'
 
 token = "99557193792244dbb38afcc3f7608da6"
 
@@ -50,38 +43,6 @@ def get_data(request):
         returnDocuments.append(serialized_document)
 
     return Response(returnDocuments)
-
-
-# def index(request):
-
-#     last_height = blockcypher.get_latest_block_height(coin_symbol='bcy',api_key=token)
-#     print("The latest BCY block height is:", last_height)
-#     message = "  <h1>   App is running...        </h1>"
-#     # return HttpResponse(
-
-#     #     {last_height, message },
-
-#     #     )
-#     return last_height
-
-
-# @api_view(['POST'])
-# def add_person(request):
-
-#     last_height = blockcypher.get_latest_block_height(coin_symbol='bcy',api_key=token)
-#     records = {
-#         "block_height": last_height,
-
-#     }
-#     test_collection.insert_one(records)
-
-
-#     # return HttpResponse("New person added")
-#     return records
-
-# def get_all_person(request):
-#     persons = test_collection.find()
-#     return HttpResponse(persons)
 
 
 
@@ -249,7 +210,7 @@ def send_money(request):
 
     print("*"*48)
     result = get_broadcast_transactions(limit=1)
-    print("result ******************", result)
+
     #update database with new balance
     if tx_ref:
         #update sending wallet
@@ -292,11 +253,9 @@ def fund_wallet(request):
     result_list = wallet_name_amount.split("_")
     wallet_name = result_list[0]
     amount_to_fund = int(result_list[1])
-    print("new wallet name", wallet_name, " amount to fund ", amount_to_fund)
 
     #get address of wallet
     get_address = get_wallet_addresses(wallet_name=wallet_name, api_key=token,coin_symbol='bcy')
-    print('get address_____', get_address)
 
     faucet_tx = blockcypher.send_faucet_coins(address_to_fund=get_address['addresses'][0],satoshis=amount_to_fund,coin_symbol='bcy',api_key=token)
     print("Faucet txid is", faucet_tx['tx_ref'])
@@ -340,7 +299,7 @@ def delete_user_wallet(request):
     # Logic to delete a  wallet
 
     wallet_name_to_delete = request.GET.get('walletNameToDelete')
-
+    print("!"*42)
     print(" wallet to be deleted", wallet_name_to_delete)
 
     delete_wallet(wallet_name=wallet_name_to_delete, api_key=token, coin_symbol='bcy')
@@ -354,10 +313,8 @@ def delete_user_wallet(request):
     for document in documents:
 
         if document.get('name') == wallet_name_to_delete:
-            print(document.get('name'), " ---", wallet_name_to_delete)
             # Assuming wallet_id is the ObjectId of the wallet you want to update
             wallet_id = document.get('_id')
-            print(wallet_id)
 
             result = test_collection.delete_one(
                 {"_id": wallet_id}
