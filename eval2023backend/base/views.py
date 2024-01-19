@@ -23,7 +23,7 @@ import datetime
 
 
 
-token = "99557193792244dbb38afcc3f7608da6"
+token = "" #add token here
 
 
 
